@@ -1,0 +1,193 @@
+CONTEXT SWITCHBOARD — BEGINNER EXPERIMENT PROTOCOL
+Prepared 25 October 2026. Status: proposed, not executed.
+
+PURPOSE
+Determine when an agent needs more input, when extra input interferes, and
+whether selecting or separating applicable context improves its actions.
+The output should identify the next engineering intervention, not merely
+declare one context size a winner.
+
+SCOPE
+Context means the instructions, question, source blocks and tool definitions
+supplied to the model for the current task. Every rollout starts fresh.
+No persistent memory, cross-session learning, retention policy, model training,
+or external-history retrieval is part of this study. Selection operates only
+over the task's supplied source packet.
+
+RESEARCH QUESTION
+Can a bounded-context agent correctly apply rules to their intended target
+when closely related but inapplicable rules appear in the same source packet?
+
+PROPOSED CONTRIBUTION AND NOVELTY STATUS
+The candidate contribution is a paired relevance-reversal evaluation of scope
+binding: the same packet supports two independent tasks; a rule useful for A
+is inapplicable to B and vice versa. Combine action-level grading, token-budget
+controls, and evidence-coverage diagnostics.
+This is not a verified first-ever experiment. Position, distraction, and
+instruction confusion have prior work. Compare the exact task generator and
+claims against DIM-Bench, GSM-DC and LURCH before asserting novelty. A focused
+search is not an exhaustive novelty proof. If the same design exists, frame
+the work as replication and extension or revise the contribution.
+
+HYPOTHESES
+H1: At complete evidence coverage, similar-but-inapplicable rules produce more
+wrong-scope actions than equal-length unrelated material.
+H2: Grouping already-present facts and scope labels reduces these errors at
+matched token count. It must not add scope information missing in the baseline.
+H3: Scope-aware selection outperforms scope-blind lexical selection under a
+fixed input cap, provided it preserves all required evidence.
+These are untested predictions. Null or reversed results are valid outcomes.
+
+TASK
+An event assistant receives an explicit target team, room options, scoped
+requirements and shared booking rules. It must call book_room(room_id), or
+report infeasibility when no room satisfies all applicable constraints.
+The tool is a local simulation: no real booking occurs.
+Begin with one action decision; later extend to several decisions with
+externally controlled, identical observations. Fresh independent decisions
+are sufficient for the first context study; do not equate it with a full
+long-horizon agent benchmark.
+
+GENERATOR
+Generate structured ground truth before rendering natural language. Each
+packet contains two targets with different valid solutions, plausible rules
+for other targets, shared requirements and available options. Give every
+block an ID and visible scope label. Gold answers and minimal sufficient
+evidence sets are evaluator-only fields.
+Make the constraint solver enumerate valid actions deterministically. Avoid
+ambiguous ties or specify a tie-break rule. Include a small balanced set of
+infeasible cases so the model cannot always succeed by booking something.
+Randomize names, values, source order and answer position. Do not mark distractors
+with special words. Use multiple independently written language templates.
+All conditions receive the same visible metadata. Never label a block with
+its gold relevance for the particular question.
+
+SIX POLICIES
+1. Full-flat: all source blocks and original labels, in interleaved order.
+2. Full-grouped: identical blocks and labels grouped by target/shared scope.
+3. Limited-recent: last whole blocks fitting the input budget.
+4. Limited-lexical: BM25-ranked whole blocks from the source packet.
+5. Limited-scoped: filter explicit target/shared scope, then use the same BM25
+   implementation and packing rule. Target parsing must use the visible query,
+   not gold labels. Start with exact target names; test aliases separately.
+6. Oracle diagnostic: evaluator supplies a minimal sufficient evidence set.
+   This is privileged and not deployable. If no sufficient set fits, mark the
+   oracle condition infeasible at that budget; do not secretly exceed it.
+
+Full versus limited is an end-to-end input-policy comparison, not a pure
+causal estimate of length. Policies differ in exposed evidence and ordering.
+Use the interventions below to identify the relevant mechanisms.
+
+CONTROLLED INTERVENTIONS
+A. Information presence: remove one required fact and substitute equal-length
+   unrelated text. Restore it in a rescue condition.
+B. Interference: hold necessary facts fixed and replace unrelated padding with
+   similar but explicitly other-target rules at the same token count.
+C. Position: move identical required evidence to start, middle or end.
+D. Structure: group versus interleave identical labeled blocks. Match token
+   counts with tokenizer-verified serialization and counterbalanced separators.
+E. Relevance reversal: independently query the two targets on the same packet.
+   Reset model and tool state between tasks. Do not expose the other answer.
+
+Avoid making every condition a giant factorial at first. Run the core six
+policies, then choose one intervention based on diagnosed failures. If changing
+separators or padding affects meaning, record it and add a padding control;
+token matching alone does not make two prompts semantically identical.
+
+BUDGETS AND RUN CONTROLS
+Pilot limited input budget: 2,000 tokens total, including system instructions,
+question, tool schema, source blocks and any protocol overhead. Use the chosen
+model's actual tokenizer or verified API token counter. Reserve output
+separately, initially 512 tokens, and document the provider's accounting.
+All full packets must fit the selected model's native window including output.
+Reject or resize oversized packets; never silently truncate the full baseline.
+Ensure some full packets exceed the limited cap, otherwise the test is trivial.
+Freeze model/version, system prompt, decoding settings, tool interface and
+maximum action calls. Start with one action call; malformed outputs count as
+failures. Permit no hidden retries. Later recovery trials use the same call
+budget for all methods. Account for every selector/model call in total cost.
+The corpus and its blocks are the same across practical policies. The oracle
+alone uses gold evidence. A selector may read the whole task packet, which is
+selection-stage access, not a small end-to-end information budget. State this
+explicitly and count preprocessing time/cost.
+
+PILOT AND CONFIRMATION
+Pilot: six packet pairs, 12 tasks, six policies, one repetition = 72 rollouts.
+Use the pilot to catch task ambiguity, trivial success, and scoring bugs.
+Do not report the pilot as a reliable comparison.
+Provisional next stage: 60 fresh packet pairs x two targets x six policies x
+three repetitions = 2,160 rollouts. This is a planning size, not a power claim.
+Use pilot variance and a predeclared smallest meaningful difference to choose
+the final sample size before examining held-out results.
+Randomize condition execution order. Keep development templates separate from
+held-out templates; split by packet pair, not by individual query.
+
+MEASUREMENTS
+Primary: action success satisfying every applicable constraint.
+Secondary:
+- wrong-scope action rate, based on the deterministic constraint checker;
+- required-evidence coverage before the model answers;
+- success conditional on complete coverage (descriptive, not alone causal);
+- position/constraint-type breakdowns;
+- actual input/output tokens per call and total across the pipeline;
+- selector overhead, API cost with date/version/pricing, cache treatment;
+- end-to-end latency and tool/schema errors.
+An action is classified as wrong-scope-compatible when it violates a target
+constraint while matching a competing target's corresponding rule. This does
+not reveal the model's hidden reasoning. Use controlled scope changes to
+strengthen attribution. An action may violate several constraints; preserve
+multi-label diagnostics as well as any preregistered exclusive classification.
+If multiple minimal sufficient evidence sets exist, count coverage of any one
+complete valid set rather than requiring one arbitrary annotation.
+
+ANALYSIS
+Compare methods on the same packets. Report paired success differences with
+95% confidence intervals clustered by packet pair, keeping paired targets and
+repetitions together in resampling. Do not treat repeats as new independent
+tasks. Predeclare the primary contrast and label other comparisons exploratory;
+adjust for multiple comparisons when making confirmatory claims.
+For equivalence or non-inferiority, specify a practical margin before testing
+(for example, 3 percentage points if justified by the product). A nonsignificant
+difference is not evidence that methods are equal.
+Also show success versus total cost. A smaller prompt is not necessarily a
+cheaper pipeline. Keep no-fit/oracle-infeasible cases visible in coverage reports.
+
+DECISION RULES FOR ITERATION
+Limited wins with coverage intact -> test interference and optimize selection.
+Limited loses and misses evidence -> improve coverage or raise the budget;
+  perform equal-length evidence restoration before blaming reasoning.
+Complete evidence but wrong-scope-compatible actions -> test grouping and
+  applicability labels with identical facts and matched token counts.
+Oracle also fails -> audit task correctness, simplify reasoning depth, check
+  tool use, and then consider a stronger model in a separate experiment.
+Methods look similar -> inspect task difficulty and uncertainty. Expand only
+  according to the prespecified plan; use a valid non-inferiority test before
+  preferring a cheaper policy on quality-equivalence grounds.
+Benefits disappear on transfer -> limit claims and improve generalization;
+  do not tune on the held-out test set.
+
+LATER VARIABLES
+Input cap (1k/2k/4k), distractor similarity, evidence placement and dispersion,
+number of dependent constraints, exact versus compressed wording, tool-schema
+volume, metadata quality, aliases, and an independently held-out second domain.
+Use a constant answering model first. A model comparison is a separate axis.
+Do not introduce memory as an explanation or intervention.
+
+FIRST PRODUCT COMPONENT
+A context assembler that takes the current request and source packet, selects
+applicable blocks under a budget, preserves scope/provenance, and logs the exact
+model input. Its next change should follow observed failures, not complexity
+for its own sake.
+
+PRIMARY READING
+Anthropic — Effective context engineering for AI agents (2025):
+https://www.anthropic.com/research/effective-context-engineering-for-ai-agents
+Gemini 1.5 (Google DeepMind, 2024):
+https://www.alphaxiv.org/pdf/2403.05530
+Lost in the Middle (2023/2024):
+https://www.alphaxiv.org/pdf/2307.03172
+RULER (2024): https://www.alphaxiv.org/pdf/2404.06654
+LURCH / Beyond Context Length (2026 preprint):
+https://www.alphaxiv.org/pdf/2610.22067
+DIM-Bench (2025): https://aclanthology.org/2025.acl-long.957/
+GSM-DC (2025): https://aclanthology.org/2025.emnlp-main.674/
