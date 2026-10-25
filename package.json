@@ -1,0 +1,13 @@
+{
+  "name": "agent-context",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.mjs --open",
+    "serve": "node server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check server.mjs && node --check dist/app.js && node --check dist/tabs.js && node --check dist/lab.mjs && node --check dist/experiment-core.mjs"
+  }
+}

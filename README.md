@@ -7,27 +7,38 @@ A beginner-friendly research guide and context-only experiment project.
 ## Current status
 
 - The research guide, reading shelf, interactive teaching example, original paper figure, and experiment protocol are complete.
-- A tabbed guide and a separate local-Ollama experiment lab are under active development. This initial GitHub push includes the current work in progress; the lab interface and server are not complete yet.
+- This checkpoint includes the tabbed guide, separate experiment lab, and local Ollama server. JavaScript checks and five automated tests pass; browser review and validation with a real Ollama model are still pending.
 - No model experiment has been run. The teaching illustration and deterministic test helpers are not evidence of LLM performance.
 - The proposed experiment's uniqueness is not established. Closely related prior work is linked in the guide and protocol.
 
 ## Files
 
 - `dist/index.html`, `dist/styles.css`, `dist/app.js`: research guide and reading shelf.
-- `dist/tabs.js`: tab-navigation enhancement in progress.
+- `dist/tabs.js`: tab navigation for the guide.
+- `dist/lab.html`, `dist/lab.css`, `dist/lab.mjs`: standalone lab interface and trial runner.
+- `server.mjs`: local static server and Ollama connection.
+- `tests/`: deterministic experiment checks and mock-provider integration tests.
 - `dist/experiment-core.mjs`: seeded task generator, context policies, and deterministic grading helpers for the planned lab.
 - `dist/experiment-protocol.txt`: full proposed experimental design.
 - `dist/assets/lurch-context.svg`: original Figure 1 cropped from LURCH, credited in the guide.
 - `extract_figure.py`: reproducible figure extraction; requires PyMuPDF and curl.
 - `.openai/hosting.json`: deployment identity and static-output configuration; contains no credentials.
 
-## Preview the guide
+## Run locally
+
+Requires Node.js 22 or newer. No package installation is needed.
 
 ```sh
-python3 -m http.server 4873 --bind 127.0.0.1 --directory dist
+git clone https://github.com/aravinds-kannappan/Agent-Context.git
+cd Agent-Context
+npm start
 ```
 
-Open http://127.0.0.1:4873. Local Ollama execution instructions will be added when the lab is ready.
+This opens the experiment lab in your browser. The guide is at http://127.0.0.1:4873. For real model trials, run Ollama locally with an installed model, select **Local Ollama** in the lab, and refresh the model list. The default connection is http://127.0.0.1:11434; set `OLLAMA_URL` to override it.
+
+The reference solver works without Ollama and demonstrates the mechanics only. Static hosting supports the reference solver; Ollama trials require the local server. Export trial data from the lab as JSON.
+
+Run `npm run check` and `npm test` to verify the code. The integration test uses a mock provider, not an actual model.
 
 ## Research scope
 
