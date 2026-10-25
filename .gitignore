@@ -8,3 +8,4 @@ playwright-report/
 results/
 *.tar.gz
 __pycache__/
+.vercel/

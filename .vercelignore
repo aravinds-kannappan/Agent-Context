@@ -1,0 +1,10 @@
+.git
+.openai
+.agents
+.codex
+node_modules
+results
+test-results
+playwright-report
+.env*
+*.tar.gz
